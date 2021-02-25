@@ -17,7 +17,7 @@ class Block {
   constructor(data) {
     this.hash = null; // Hash of the block
     this.height = 0; // Block Height (consecutive number of each block)
-    this.body = Buffer(JSON.stringify(data)).toString("hex"); // Will contain the transactions stored in the block, by default it will encode the data
+    this.body = Buffer.from(JSON.stringify(data), "ascii").toString("hex"); // Will contain the transactions stored in the block, by default it will encode the data
     this.time = 0; // Timestamp for the Block creation
     this.previousBlockHash = null; // Reference to the previous Block Hash
   }
@@ -36,12 +36,16 @@ class Block {
    */
   validate() {
     let self = this;
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       // Save in auxiliary variable the current block hash
-      // call getbdata to get the decoded body
+      const currentBlockHash = self.hash;
       // Recalculate the hash of the Block
+      const calculatedHash = await SHA256(
+        JSON.stringify({ ...self, hash: null }).toString()
+      );
       // Returning the Block is not valid
       // Returning the Block is valid
+      resolve(calculatedHash === currentBlockHash);
     });
   }
 
@@ -55,10 +59,18 @@ class Block {
    *     or Reject with an error.
    */
   getBData() {
-    // Getting the encoded data saved in the Block
-    // Decoding the data to retrieve the JSON representation of the object
-    // Parse the data to an object to be retrieve.
-    // Resolve with the data if the object isn't the Genesis block
+    return new Promise((resolve, reject) => {
+      // Getting the encoded data saved in the Block
+      const hexEncodedBody = this.body;
+      // Decoding the data to retrieve the JSON representation of the object
+      const decodedStringObj = hex2ascii(hexEncodedBody);
+      // Parse the data to an object to be retrieve.
+      const decodedJsonObj = JSON.parse(decodedStringObj);
+      // Resolve with the data if the object isn't the Genesis block
+      this.height > 0
+        ? resolve(decodedJsonObj)
+        : reject(new Error("Genesis block"));
+    });
   }
 }
 
