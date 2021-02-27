@@ -17,6 +17,7 @@ class Block {
   constructor(data) {
     this.hash = null; // Hash of the block
     this.height = 0; // Block Height (consecutive number of each block)
+    // Buffer function is deprecated. Credit to repo https://github.com/lucribas/udacity-blockchaindev-nanodegree/blob/master/project_1_v2/src/block.js for solution to move on
     this.body = Buffer.from(JSON.stringify(data), "ascii").toString("hex"); // Will contain the transactions stored in the block, by default it will encode the data
     this.time = 0; // Timestamp for the Block creation
     this.previousBlockHash = null; // Reference to the previous Block Hash
