@@ -92,12 +92,12 @@ class BlockchainController {
   getBlockByHash() {
     this.app.get("/block/:hash", async (req, res) => {
       if (req.params.hash) {
-        const hash = req.params.hash;
+        const hash = req.params.hash.toString();
         let block = await this.blockchain.getBlockByHash(hash);
         if (block) {
           return res.status(200).json(block);
         } else {
-          return res.status(404).send("Block Not Found!");
+          return res.status(404).send("Block not found!");
         }
       } else {
         return res.status(404).send("Block Not Found! Review the Parameters!");
