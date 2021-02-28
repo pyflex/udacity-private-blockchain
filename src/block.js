@@ -42,8 +42,8 @@ class Block {
       const currentBlockHash = self.hash;
       // Recalculate the hash of the Block
       const calculatedHash = await SHA256(
-        JSON.stringify({ ...self, hash: null }).toString()
-      );
+        JSON.stringify({ ...self, hash: null })
+      ).toString();
       // Returning the Block is not valid
       // Returning the Block is valid
       // no need to verify genesis block

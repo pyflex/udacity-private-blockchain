@@ -70,9 +70,9 @@ class Blockchain {
         ? self.chain[currentHeight].hash
         : null;
       block.time = new Date().getTime().toString().slice(0, -3);
-      block.height = self.chain.length;
+      block.height = currentHeight + 1;
       block.hash = await SHA256(
-        JSON.stringify({ ...self, hash: null })
+        JSON.stringify({ ...block, hash: null })
       ).toString();
 
       let isBlockValid =
@@ -135,7 +135,7 @@ class Blockchain {
 
       const timeElapsed = currentTime - msgTime;
       // 5 * 60 = 300 sec --> 5 min
-      if (timeElapsed > 300) reject("Request timed out.");
+      if (timeElapsed > 6000) reject("Request timed out.");
       if (!bitcoinMessage.verify(message, address, signature))
         reject("Request could not be verified.");
 
@@ -209,15 +209,15 @@ class Blockchain {
         let block = self.chain[i];
         if (!(await block.validate()))
           errorLog.push(
-            new Error(`[ERROR]: Could not validate block of height #${i}`)
+            `[ERROR]: Could not validate block hash of height #${i}`
           );
         const prevBlock = self.chain[i - 1];
         if (prevBlock.hash !== block.previousBlockHash)
           errorLog.push(
-            new Error(`[ERROR]: Differing hashes of blocks #${i - 1} and #${i}`)
+            `[ERROR]: Differing hashes of blocks #${i - 1} and #${i}`
           );
       }
-      resolve(errorLog);
+      errorLog.length > 0 ? resolve(errorLog) : resolve("Chain is secure.");
     });
   }
 }
