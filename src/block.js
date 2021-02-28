@@ -46,7 +46,8 @@ class Block {
       );
       // Returning the Block is not valid
       // Returning the Block is valid
-      resolve(calculatedHash === currentBlockHash);
+      // no need to verify genesis block
+      resolve(calculatedHash === currentBlockHash || self.height === 0);
     });
   }
 
@@ -60,18 +61,18 @@ class Block {
    *     or Reject with an error.
    */
   getBData() {
-    return new Promise((resolve, reject) => {
-      // Getting the encoded data saved in the Block
-      const hexEncodedBody = this.body;
-      // Decoding the data to retrieve the JSON representation of the object
-      const decodedStringObj = hex2ascii(hexEncodedBody);
-      // Parse the data to an object to be retrieve.
-      const decodedJsonObj = JSON.parse(decodedStringObj);
-      // Resolve with the data if the object isn't the Genesis block
-      this.height > 0
-        ? resolve(decodedJsonObj)
-        : reject(new Error("Genesis block"));
-    });
+    // Getting the encoded data saved in the Block
+    const hexEncodedBody = this.body;
+    // Decoding the data to retrieve the JSON representation of the object
+    const decodedStringObj = hex2ascii(hexEncodedBody);
+    // Parse the data to an object to be retrieve.
+    const decodedJsonObj = JSON.parse(decodedStringObj);
+    // Resolve with the data if the object isn't the Genesis block
+    if (this.height > 0) {
+      return decodedJsonObj;
+    } else {
+      return new Error("Genesis block");
+    }
   }
 }
 

@@ -75,7 +75,7 @@ class BlockchainController {
             star
           );
           if (block) {
-            return res.status(200).json(block);
+            return res.status(200).json(this.blockchain);
           } else {
             return res.status(500).send("An error happened!");
           }

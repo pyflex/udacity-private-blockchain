@@ -61,21 +61,25 @@ class Blockchain {
    * that this method is a private method.
    */
   _addBlock(block) {
-    console.log(block);
     let self = this;
     return new Promise(async (resolve, reject) => {
       // height before this newly created block is added to chain, aka previous height
-      let currentHeight = self.chain.height;
+      let currentHeight = self.height;
 
       block.previousBlockHash = self.chain[currentHeight]
         ? self.chain[currentHeight].hash
         : null;
       block.time = new Date().getTime().toString().slice(0, -3);
       block.height = self.chain.length;
-      block.hash = await SHA256(JSON.stringify(block)).toString();
+      block.hash = await SHA256(
+        JSON.stringify({ ...self, hash: null })
+      ).toString();
 
       let isBlockValid =
-        block.hash && block.time && block.height === self.chain.length;
+        (await self.validateChain()) &&
+        block.hash &&
+        block.time &&
+        block.height === self.chain.length;
 
       isBlockValid ? resolve(block) : reject(new Error("Block is invalid."));
     })
@@ -84,7 +88,7 @@ class Blockchain {
       })
       .then((block) => {
         self.chain.push(block);
-        self.chain.height += 1;
+        self.height += 1;
         // aka self.chain.length
         return block;
       });
@@ -135,11 +139,9 @@ class Blockchain {
       if (!bitcoinMessage.verify(message, address, signature))
         reject("Request could not be verified.");
 
-      let block = new BlockClass.Block({ star });
-      block.address = address;
+      let block = new BlockClass.Block({ owner: address, data: star });
 
       let addedBlock = await self._addBlock(block);
-      console.log("addedBlock: ", addedBlock);
       resolve(addedBlock);
     });
   }
@@ -153,7 +155,7 @@ class Blockchain {
   getBlockByHash(hash) {
     let self = this;
     return new Promise((resolve, reject) => {
-      resolve(self.chain.filter((block) => block.hash === hash)[0]);
+      resolve(self.chain.find((block) => block.hash === hash));
     });
   }
 
@@ -165,12 +167,8 @@ class Blockchain {
   getBlockByHeight(height) {
     let self = this;
     return new Promise((resolve, reject) => {
-      let block = self.chain.filter((p) => p.height === height)[0];
-      if (block) {
-        resolve(block);
-      } else {
-        resolve(null);
-      }
+      let block = self.chain.find((p) => p.height === height);
+      block ? resolve(block) : resolve(null);
     });
   }
 
@@ -184,9 +182,14 @@ class Blockchain {
     let self = this;
     let stars = [];
     return new Promise((resolve, reject) => {
-      stars.push(self.chain.filter((block) => block.address === address));
-      // removing nested array
-      stars = stars[0];
+      // skipping the genesis block
+      for (let i = 1; i < self.chain.length; i++) {
+        let block = self.chain[i];
+        const { owner, data } = block.getBData();
+        if (owner === address) {
+          stars.push({ ...block, body: { star: data, owner } });
+        }
+      }
       resolve(stars);
     });
   }
@@ -205,12 +208,12 @@ class Blockchain {
       for (let i = 1; i < self.chain.length; i++) {
         let block = self.chain[i];
         if (!(await block.validate()))
-          errorLog.append(
+          errorLog.push(
             new Error(`[ERROR]: Could not validate block of height #${i}`)
           );
         const prevBlock = self.chain[i - 1];
         if (prevBlock.hash !== block.previousBlockHash)
-          errorLog.append(
+          errorLog.push(
             new Error(`[ERROR]: Differing hashes of blocks #${i - 1} and #${i}`)
           );
       }
